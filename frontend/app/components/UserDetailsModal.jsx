@@ -5,104 +5,94 @@ import {
   IdentificationIcon,
   EnvelopeIcon,
   ShieldCheckIcon,
-  ArrowRightOnRectangleIcon,
   LockOpenIcon,
-  LockClosedIcon // For potentially locked accounts
+  LockClosedIcon
 } from '@heroicons/react/24/outline';
 
 const UserDetailsModal = ({ user, onClose }) => {
   if (!user) return null; // Don't render if no user is provided
 
-  // Dummy data for fields not necessarily in your current user object
-  // Replace these with actual data from 'user' prop when your backend provides them
-  const joinedDate = user.joinedDate ? new Date(user.joinedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : `May ${Math.floor(Math.random() * 28) + 1}, 2020`;
-  const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : `Jun ${Math.floor(Math.random() * 28) + 1}, 2020, ${Math.floor(Math.random() * 12) + 1}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')} AM`;
-  const accountStatus = user.accountStatus || 'Unlocked'; // e.g., 'Locked', 'Unlocked'
-  const userRole = user.role || 'USER'; // Use the role from your user object, default to USER
+  // Directly use values from the 'user' prop.
+  // Provide fallbacks if fields might be missing from your backend data.
+  const userRole = user.role ? user.role.replace('_', ' ') : 'N/A'; // Use the role from user object, format it, default to N/A
+  const accountStatus = user.accountStatus || 'Unlocked'; // e.g., 'Locked', 'Unlocked', default to 'Unlocked'
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-auto">
+      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-auto transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-800">
-            {user.firstName} {user.lastName}
+        <div className="flex items-center justify-between p-5 border-b border-gray-200">
+          <h3 className="text-xl font-bold text-gray-900">
+            User Profile
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md"
+            className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1 transition-colors duration-200"
+            aria-label="Close"
           >
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-6">
           {/* User Summary Section */}
-          <div className="flex items-start space-x-4 pb-4 border-b border-gray-100">
-            <div className="flex-shrink-0">
+          <div className="flex flex-col items-center sm:flex-row sm:items-start sm:space-x-6 pb-6 border-b border-gray-100">
+            <div className="flex-shrink-0 mb-4 sm:mb-0">
               <img
-                className="h-20 w-20 rounded-lg object-cover ring-1 ring-gray-200"
+                className="h-24 w-24 rounded-full object-cover ring-2 ring-blue-200 shadow-md"
                 src={user.photoUrl}
-                alt={`${user.firstName}'s photoUrl`}
+                alt={`${user.firstName}'s photo`}
                 onError={(e) => { e.target.onerror = null; e.target.src = '/avatars/default.png' }}
               />
             </div>
-            <div className="flex-grow">
-              <div className="flex items-baseline justify-between">
-                <h4 className="text-lg font-semibold text-gray-900">
-                  {user.firstName} {user.lastName}
-                </h4>
-                <p className="text-sm text-gray-500">Joined {joinedDate}</p>
-              </div>
-              <p className="text-sm text-gray-600">{user.username}</p>
-              <div className="flex items-center space-x-2 mt-1">
+            <div className="text-center sm:text-left flex-grow">
+              <h4 className="text-2xl font-bold text-gray-900 mb-1">
+                {user.firstName} {user.lastName}
+              </h4>
+              <p className="text-lg text-gray-700 font-medium mb-2">{user.username}</p>
+              <div className="flex justify-center sm:justify-start items-center space-x-2 mt-2">
                 <span className={`
-                    px-2.5 py-0.5 inline-flex text-xs font-medium rounded-md
-                    ${user.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}
+                    px-3 py-1 inline-flex text-sm font-semibold rounded-full
+                    ${user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
                 `}>
-                  Status: {user.status}
+                  {user.status}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Last Login: {lastLogin}</p>
             </div>
           </div>
 
           {/* User Details List */}
-          <div className="space-y-3">
-            <div className="flex items-center text-sm text-gray-800">
-              <IdentificationIcon className="h-5 w-5 mr-3 text-gray-500" />
-              <span>{user.id}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center text-base text-gray-800">
+              <IdentificationIcon className="h-5 w-5 mr-3 text-gray-500 flex-shrink-0" />
+              <span className="font-medium">User ID:</span> <span className="ml-2">{user.id}</span>
             </div>
-            <div className="flex items-center text-sm text-gray-800">
-              <EnvelopeIcon className="h-5 w-5 mr-3 text-gray-500" />
-              <span>{user.email}</span>
+            <div className="flex items-center text-base text-gray-800">
+              <EnvelopeIcon className="h-5 w-5 mr-3 text-gray-500 flex-shrink-0" />
+              <span className="font-medium">Email:</span> <span className="ml-2 break-all">{user.email}</span>
             </div>
-            <div className="flex items-center text-sm text-gray-800">
-              <ShieldCheckIcon className="h-5 w-5 mr-3 text-gray-500" />
-              <span>{userRole.replace('_', ' ')}</span> {/* Display role nicely */}
+            <div className="flex items-center text-base text-gray-800">
+              <ShieldCheckIcon className="h-5 w-5 mr-3 text-gray-500 flex-shrink-0" />
+              <span className="font-medium">Role:</span> <span className="ml-2">{userRole}</span>
             </div>
-            <div className="flex items-center text-sm text-gray-800">
-              <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3 text-gray-500" />
-              <span>{lastLogin}</span> {/* Redundant with summary but present in image */}
-            </div>
-            <div className="flex items-center text-sm text-gray-800">
+            <div className="flex items-center text-base text-gray-800">
               {accountStatus === 'Unlocked' ? (
-                <LockOpenIcon className="h-5 w-5 mr-3 text-green-500" />
+                <LockOpenIcon className="h-5 w-5 mr-3 text-green-600 flex-shrink-0" />
               ) : (
-                <LockClosedIcon className="h-5 w-5 mr-3 text-red-500" />
+                <LockClosedIcon className="h-5 w-5 mr-3 text-red-600 flex-shrink-0" />
               )}
-              <span>Account {accountStatus}</span>
+              <span className="font-medium">Account Status:</span> <span className="ml-2">{accountStatus}</span>
             </div>
           </div>
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+        <div className="p-5 bg-gray-50 border-t border-gray-200 flex justify-end">
           <button
             onClick={onClose}
             type="button"
-            className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm"
+            className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-5 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-colors duration-200"
           >
             Close
           </button>

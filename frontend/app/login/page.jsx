@@ -1,8 +1,10 @@
 // components/LoginPage.jsx
 "use client"; // For Next.js App Router
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation'; // For App Router, use 'next/navigation'
+import React, { useState } from 'react'; // Removed useEffect, useCallback for lockout
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { UserIcon, KeyIcon, ArrowRightOnRectangleIcon, UserPlusIcon } from '@heroicons/react/24/outline'; // Icons
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -10,15 +12,31 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Lockout states (REMOVED - these are no longer needed)
+  // const [isLockedOut, setIsLockedOut] = useState(false);
+  // const [lockoutRemainingTime, setLockoutRemainingTime] = useState(0);
+  // const [lockoutIntervalId, setLockoutIntervalId] = useState(null);
+
   const router = useRouter();
 
-  const handleLogin = async (e) => {
-    e.preventDefault(); // Prevent default form submission and page reload
-    setLoading(true);
-    setError(null); // Clear previous errors
+  // --- Lockout Utility Functions (REMOVED) ---
+  // const getLockoutData = useCallback((user) => { ... }, []);
+  // const saveLockoutData = useCallback((user, data) => { ... }, []);
+  // const clearLockoutTimer = useCallback(() => { ... }, []);
 
+  // --- Effect to Monitor Lockout Status (REMOVED) ---
+  // useEffect(() => { ... }, [...]);
+
+
+  // --- Handle Login Function (Simplified - No Lockout Logic) ---
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    // No lockout check here anymore, proceed directly to API call
     try {
-      const response = await fetch('http://localhost:8080/api/users/login', { // Adjust endpoint if needed
+      const response = await fetch('http://localhost:8080/api/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -27,31 +45,27 @@ const LoginPage = () => {
       });
 
       if (!response.ok) {
-        // Attempt to parse error message from backend
         let errorMessage = `Login failed! HTTP error: ${response.status}`;
         try {
           const errorData = await response.json();
           errorMessage = errorData.message || errorData.error || errorMessage;
         } catch (jsonError) {
-          // If response is not JSON, use the raw text
           errorMessage = await response.text();
         }
         throw new Error(errorMessage);
       }
 
+      // --- Handle Successful Login ---
       const data = await response.json();
-      console.log('Login successful:', data);
-
-      // Assuming your backend returns a JWT token upon successful login
-      const token = data.token; // Adjust 'data.token' if your backend uses a different field
+      const token = data.token;
       if (token) {
-        localStorage.setItem('jwt_token', token); // Store the token securely with a clear key
-        // Optionally store user role or other essential info if your backend provides it
+        localStorage.setItem('jwt_token', token);
         localStorage.setItem('user_role', data.role);
         
-        router.push('/dashboard'); // Redirect to the dashboard page
+        // No lockout data to clear on success
+        router.push('/dashboard');
       } else {
-        throw new Error('No token received from the server.');
+        throw new Error('Invalid username or password. No token received.'); // Fallback error
       }
 
     } catch (err) {
@@ -62,91 +76,120 @@ const LoginPage = () => {
     }
   };
 
+  // --- Utility for formatting remaining time (REMOVED) ---
+  // const formatTime = (seconds) => { ... };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4 sm:p-6 lg:p-8">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4 sm:p-6 lg:p-8">
+      <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-emerald-700/50">
+        <h2 className="text-4xl font-extrabold text-center text-white mb-8 tracking-wide">Welcome Back!</h2>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">{error}</span>
+          <div className="bg-red-800/20 border border-red-700 text-red-300 px-4 py-3 rounded-lg relative mb-6 animate-pulse-once" role="alert">
+            <p className="font-semibold">{error}</p>
+            {/* Lockout remaining time display (REMOVED) */}
+            {/* {isLockedOut && lockoutRemainingTime > 0 && (
+              <p className="mt-2 text-sm text-red-200">Time remaining: <span className="font-bold">{formatTime(lockoutRemainingTime)}</span></p>
+            )} */}
           </div>
         )}
 
         <form className="space-y-6" onSubmit={handleLogin}>
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-              Username
+            <label htmlFor="username" className="block text-sm font-medium text-emerald-300 mb-2">
+              <UserIcon className="inline-block h-5 w-5 mr-2 -mt-1 text-emerald-400" /> Username
             </label>
-            <input
-              type="text"
-              id="username"
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="superadmin"
-              value={username} // Controlled component
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                id="username"
+                className="appearance-none block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all duration-200"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  setError(null); // Clear error on input change
+                }}
+                required
+                // disabled={isLockedOut || loading} // Removed isLockedOut from disabled
+                disabled={loading}
+              />
+            </div>
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+            <label htmlFor="password" className="block text-sm font-medium text-emerald-300 mb-2">
+              <KeyIcon className="inline-block h-5 w-5 mr-2 -mt-1 text-emerald-400" /> Password
             </label>
-            <input
-              type="password"
-              id="password"
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="password123"
-              value={password} // Controlled component
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <input
+                type="password"
+                id="password"
+                className="appearance-none block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all duration-200"
+                placeholder="Your secret password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                // disabled={isLockedOut || loading} // Removed isLockedOut from disabled
+                disabled={loading}
+              />
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          {/* Remember me and Forgot password section (Re-added) */}
+          <div className="flex items-center justify-between text-gray-300">
             <div className="flex items-center">
               <input
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-500 rounded bg-gray-700"
+                // disabled={isLockedOut || loading} // Removed isLockedOut from disabled
+                disabled={loading}
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="remember-me" className="ml-2 block text-sm">
                 Remember me
               </label>
             </div>
 
             <div className="text-sm">
-              <a href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
-                Forgot your password?
-              </a>
+              <Link href="/forgot-password" legacyBehavior>
+                <a className="font-medium text-emerald-500 hover:text-emerald-400 transition-colors duration-200">
+                  Forgot password?
+                </a>
+              </Link>
             </div>
           </div>
-
+          {/* End Remember me and Forgot password section */}
+          
           <div>
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={loading} // Disable button while loading
+              className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-bold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
+              // disabled={loading || isLockedOut} // Removed isLockedOut from disabled
+              disabled={loading}
             >
               {loading ? (
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               ) : (
-                'Log in'
+                <>
+                  <ArrowRightOnRectangleIcon className="h-6 w-6 mr-3" /> Log In
+                </>
               )}
             </button>
           </div>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-8 text-center text-sm text-gray-400">
           Don't have an account?{' '}
-          <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-            Register here
-          </a>
+          <Link href="/register" legacyBehavior>
+            <a className="font-medium text-emerald-500 hover:text-emerald-400 transition-colors duration-200 inline-flex items-center">
+              <UserPlusIcon className="h-4 w-4 mr-1 -mt-0.5" /> Register here
+            </a>
+          </Link>
         </p>
       </div>
     </div>

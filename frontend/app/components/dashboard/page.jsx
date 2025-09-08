@@ -5,14 +5,14 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 // Import new components
-import UserHeader from '../components/UserHeader';
-import UserActionsBar from '../components/UserActionsBar';
-import DashboardContent from '../components/DashboardContent';
+import UserHeader from '../UserHeader';
+import UserActionsBar from '../UserActionsBar';
+import DashboardContent from '../DashboardContent';
 
-// Import modals
-import UserDetailsModal from '../components/UserDetailsModal';
-import NewUserModal from '../components/NewUserModal';
-import EditUserModal from '../components/EditUserModal';
+// Import modals (already separate, which is great)
+import UserDetailsModal from '../UserDetailsModal';
+import NewUserModal from '../NewUserModal';
+import EditUserModal from '../EditUserModal';
 
 const UserDashboardUI = () => {
   const router = useRouter();
@@ -23,7 +23,7 @@ const UserDashboardUI = () => {
   const [loggedInUserName, setLoggedInUserName] = useState("Guest");
   const [loggedInUserRole, setLoggedInUserRole] = useState(null);
   const [loggedInUserId, setLoggedInUserId] = useState(null);
-  const [loggedInUserPhotoUrl, setLoggedInUserPhotoUrl] = useState(null);
+  const [loggedInUserPhotoUrl, setLoggedInUserPhotoUrl] = useState(null); // New state for photo URL
 
   // States for modals
   const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
@@ -134,17 +134,19 @@ const UserDashboardUI = () => {
       const data = await response.json();
       const usersWithDefaults = data.map(user => ({
           ...user,
-          photoUrl: user.photoUrl || `/avatars/avatar${(Math.abs(user.id) % 5) + 1}.png`,
+          photoUrl: user.photoUrl || `/avatars/avatar${(Math.abs(user.id) % 5) + 1}.png`, // Ensure photoUrl is set
           status: user.status || 'ACTIVE',
-          accountStatus: user.accountStatus || (Math.random() > 0.9 ? 'Locked' : 'Unlocked')
+          accountStatus: user.accountStatus || (Math.random() > 0.9 ? 'Locked' : 'Unlocked') // Keep if still relevant
       }));
       setUsers(usersWithDefaults);
       console.log('Fetched users:', usersWithDefaults);
 
+      // After fetching all users, find the logged-in user's photo
       const loggedInUser = usersWithDefaults.find(user => user.username === currentLoggedInUserName);
       if (loggedInUser && loggedInUser.photoUrl) {
         setLoggedInUserPhotoUrl(loggedInUser.photoUrl);
       } else {
+        // Fallback for logged-in user's photo if not found or no specific photoUrl
         setLoggedInUserPhotoUrl(`/avatars/avatar${(Math.abs(currentLoggedInUserId || 0) % 5) + 1}.png`);
       }
 
@@ -158,7 +160,7 @@ const UserDashboardUI = () => {
 
   // Handle user deletion
   const handleDeleteUser = useCallback(async (userId, event) => {
-    event.stopPropagation();
+    event.stopPropagation(); // Prevent row click from opening details modal
 
     if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
       return;
@@ -248,7 +250,7 @@ const UserDashboardUI = () => {
         ...newUser,
         photoUrl: newUser.photoUrl || `/avatars/avatar${(Math.abs(newUser.id) % 5) + 1}.png`,
         status: newUser.status || 'ACTIVE',
-        accountStatus: newUser.accountStatus || 'Unlocked'
+        accountStatus: newUser.accountStatus || 'Unlocked' // Keep if still relevant
       };
 
       setUsers(prevUsers => [...prevUsers, newUserWithDefaults]);
@@ -272,7 +274,7 @@ const UserDashboardUI = () => {
 
     try {
       const response = await fetch(`http://localhost:8080/api/users/update/${userId}`, {
-        method: 'PUT',
+        method: 'PUT', // Use PUT for updates
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -304,12 +306,14 @@ const UserDashboardUI = () => {
           user.id === userId ? {
             ...user,
             ...updatedUser,
+            // Ensure photoUrl and other relevant fields are maintained if not returned by backend
             photoUrl: updatedUser.photoUrl || user.photoUrl,
             status: updatedUser.status || user.status,
           } : user
         )
       );
 
+      // If the logged-in user's own profile was updated, update their photo URL
       if (userId === loggedInUserId) {
         setLoggedInUserPhotoUrl(updatedUser.photoUrl || `/avatars/avatar${(Math.abs(loggedInUserId || 0) % 5) + 1}.png`);
       }
@@ -334,15 +338,14 @@ const UserDashboardUI = () => {
     )
   );
 
+  // Available roles for the new user creation modal and edit modal
   const availableRoles = ['USER', 'ADMIN', 'SUPER_ADMIN', 'HR'];
 
   return (
-    // Applied dark-green theme background to the main container
-    <div className="min-h-screen bg-gray-950 pb-8"> {/* Added pb-8 for some bottom spacing */}
+    <div className="min-h-screen bg-gray-100 ">
       <UserHeader loggedInUserName={loggedInUserName} loggedInUserPhotoUrl={loggedInUserPhotoUrl} />
 
-      {/* Main content wrapper, re-applying max-w and horizontal auto-margin for centering */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> {/* Adjusted padding for larger screens */}
+      <div className="mx-5 ">
         <UserActionsBar
           loggedInUserRole={loggedInUserRole}
           handleOpenNewUserModal={handleOpenNewUserModal}
@@ -363,11 +366,12 @@ const UserDashboardUI = () => {
         />
       </div>
 
-      {/* Modals are unaffected by this root theme change, they have their own styling */}
+      {/* User Details Modal */}
       {showUserDetailsModal && (
         <UserDetailsModal user={selectedUser} onClose={handleCloseUserDetailsModal} />
       )}
 
+      {/* New User Modal */}
       {showNewUserModal && (
         <NewUserModal
           onClose={handleCloseNewUserModal}
@@ -377,6 +381,7 @@ const UserDashboardUI = () => {
         />
       )}
 
+      {/* Edit User Modal */}
       {showEditUserModal && (
         <EditUserModal
           onClose={handleCloseEditUserModal}
